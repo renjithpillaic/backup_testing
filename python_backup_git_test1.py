@@ -4,11 +4,11 @@ from netmiko import ConnectHandler
 
 DEVICE_FILE = "devices.txt"
 USERNAME = "cisco"
-PASSWORD = "Cisco123!"  # Update with your lab password
+PASSWORD = "Cisco123!"
 
 def backup_ios_nxos(ip):
     device = {
-        "device_type": "cisco_ios",  # Default to IOS
+        "device_type": "cisco_ios",
         "ip": ip,
         "username": USERNAME,
         "password": PASSWORD,
@@ -16,7 +16,6 @@ def backup_ios_nxos(ip):
     }
 
     try:
-        # Step 1: Try SSH, fallback to Telnet
         try:
             connection = ConnectHandler(**device)
         except Exception:
@@ -26,23 +25,14 @@ def backup_ios_nxos(ip):
 
         connection.enable()
 
-        # Step 2: Detect NX-OS
         version = connection.send_command("show version")
         if "NX-OS" in version:
             print(f"Detected Nexus Platform on {ip}. Switching driver...")
             connection.disconnect()
-
             device["device_type"] = "cisco_nxos"
-            try:
-                connection = ConnectHandler(**device)
-            except Exception:
-                print(f"Nexus SSH failed for {ip}, trying Nexus Telnet...")
-                device["device_type"] = "cisco_nxos_telnet"
-                connection = ConnectHandler(**device)
-
+            connection = ConnectHandler(**device)
             connection.enable()
 
-        # Step 3: Backup config
         print(f"Pulling running configuration from {ip}...")
         output = connection.send_command("show running-config")
         save_config(ip, output)
@@ -53,8 +43,13 @@ def backup_ios_nxos(ip):
         print(f"Failed to backup {ip}: {e}")
 
 def save_config(identifier, config):
+    # Create folder with date and time
+    folder_name = datetime.datetime.now().strftime("backup_%Y%m%d_%H%M")
+    os.makedirs(folder_name, exist_ok=True)
+
+    # Save file inside that folder
     timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-    filename = f"backup_{identifier}_{timestamp}.txt"
+    filename = f"{folder_name}/backup_{identifier}_{timestamp}.txt"
     with open(filename, "w") as f:
         f.write(config)
     print(f"Backup successful for {identifier} -> {filename}\n")
@@ -72,16 +67,12 @@ def main():
     try:
         with open(DEVICE_FILE, "r") as f:
             entries = [line.strip() for line in f if line.strip() and not line.startswith("#")]
-        
         for ip in entries:
             print(f"Starting backup sequence for node: {ip}")
             backup_ios_nxos(ip)
-        
-        # Push all backups to GitHub
         git_push()
-
     except FileNotFoundError:
-        print(f"Error: Inventory file '{DEVICE_FILE}' not found in the current directory.")
+        print(f"Error: Inventory file '{DEVICE_FILE}' not found.")
 
 if __name__ == "__main__":
     main()
