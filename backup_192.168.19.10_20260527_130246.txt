@@ -1,0 +1,99 @@
+Building configuration...
+
+Current configuration : 777 bytes
+!
+version 12.4
+service timestamps debug datetime msec
+service timestamps log datetime msec
+no service password-encryption
+!
+hostname R1
+!
+boot-start-marker
+boot-end-marker
+!
+enable password Cisco123!
+!
+no aaa new-model
+memory-size iomem 5
+ip cef
+!
+!
+!
+!
+ip domain name a.test.com
+!
+multilink bundle-name authenticated
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+username cisco password 0 Cisco123!
+archive
+ log config
+  hidekeys
+! 
+!
+!
+!
+!
+!
+!
+!
+interface FastEthernet0/0
+ ip address 192.168.19.10 255.255.255.0
+ speed auto
+ full-duplex
+!
+interface FastEthernet0/1
+ no ip address
+ duplex auto
+ speed auto
+!
+ip forward-protocol nd
+!
+!
+ip http server
+no ip http secure-server
+!
+!
+!
+!
+!
+!
+!
+control-plane
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+line con 0
+line aux 0
+line vty 0 4
+ login local
+!
+!
+end
